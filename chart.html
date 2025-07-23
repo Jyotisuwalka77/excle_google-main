@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard | Data Charts</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", sans-serif;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #333;
+      }
+
+      nav {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 20px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      nav h1 {
+        font-size: 24px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      nav h1::before {
+        content: "📊";
+        font-size: 28px;
+      }
+
+      nav .nav-links {
+        display: flex;
+        gap: 10px;
+      }
+
+      nav a {
+        color: rgba(255, 255, 255, 0.9);
+        text-decoration: none;
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      nav a:hover {
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 20px;
+      }
+
+      .chart-section {
+        margin-bottom: 40px;
+      }
+
+      h2 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 20px;
+      }
+
+      .chart-container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      }
+
+      canvas {
+        width: 100% !important;
+        height: 400px !important;
+      }
+
+      .chart-wrapper {
+        position: relative;
+        height: 400px;
+        width: 100%;
+      }
+
+      .table-wrapper {
+        overflow-x: auto;
+        border-radius: 12px;
+        background: #fff;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: "Inter", sans-serif;
+      }
+
+      .data-table thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .data-table th {
+        padding: 16px 20px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .data-table td {
+        padding: 12px 20px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        font-size: 14px;
+        color: #333;
+      }
+
+      .data-table tbody tr:hover {
+        background-color: rgba(102, 126, 234, 0.05);
+      }
+
+      .legend {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        margin-top: 15px;
+        flex-wrap: wrap;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #555;
+      }
+
+      .legend-color {
+        width: 14px;
+        height: 14px;
+        border-radius: 4px;
+      }
+
+      .green {
+        background-color: rgba(144, 238, 144, 0.7);
+      }
+      .yellow {
+        background-color: rgba(255, 255, 0, 0.7);
+      }
+      .red {
+        background-color: rgba(255, 182, 193, 0.7);
+      }
+
+      .loading {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 400px;
+        color: #666;
+        font-size: 16px;
+      }
+
+      .loading::before {
+        content: "";
+        width: 30px;
+        height: 30px;
+        border: 3px solid rgba(102, 126, 234, 0.3);
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-right: 10px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 40px;
+      }
+
+      .stat-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(20px);
+        border-radius: 16px;
+        padding: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        text-align: center;
+      }
+
+      .stat-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #fff;
+        margin-bottom: 5px;
+      }
+
+      .stat-label {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .error {
+        background: rgba(255, 107, 107, 0.1);
+        color: #ff6b6b;
+        padding: 20px;
+        border-radius: 16px;
+        text-align: center;
+        border: 1px solid rgba(255, 107, 107, 0.3);
+      }
+
+      @media (max-width: 768px) {
+        nav {
+          flex-direction: column;
+          gap: 15px;
+          padding: 20px;
+        }
+
+        nav h1 {
+          font-size: 20px;
+        }
+
+        .container {
+          padding: 20px 15px;
+        }
+
+        h2 {
+          font-size: 20px;
+        }
+
+        .chart-container {
+          padding: 15px;
+        }
+
+        .chart-wrapper,
+        canvas {
+          height: 300px !important;
+        }
+
+        .stats-grid {
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        }
+        .chart-container {
+          padding: 15px 10px; /* Reduced horizontal padding */
+        }
+
+        #preControlChart {
+          font-size: 8px; /* Smaller font for mobile */
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <h1>Data Charts Dashboard</h1>
+      <div class="nav-links">
+        <a href="index.html">Form Page</a>
+        <a href="#">Charts</a>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="stats-grid" id="statsGrid" style="display: none">
+        <div class="stat-card">
+          <div class="stat-value" id="totalEntries">-</div>
+          <div class="stat-label">Total Entries</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="avgValue">-</div>
+          <div class="stat-label">Average Value</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="maxValue">-</div>
+          <div class="stat-label">Maximum</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="minValue">-</div>
+          <div class="stat-label">Minimum</div>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h2>📈 Line Chart: Daily Values</h2>
+        <div class="chart-container">
+          <div class="loading" id="lineLoading">Loading chart data...</div>
+          <div class="chart-wrapper">
+            <canvas id="lineChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h2>📊 Bar Chart: Daily Entries</h2>
+        <div class="chart-container">
+          <div class="loading" id="barLoading">Loading chart data...</div>
+          <div class="chart-wrapper">
+            <canvas id="barChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h2>📉 Histogram: Value Distribution</h2>
+        <div class="chart-container">
+          <div class="loading" id="histLoading">Loading chart data...</div>
+          <div class="chart-wrapper">
+            <canvas id="histogramChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h2>📋 Line Chart Readings Table</h2>
+        <div class="chart-container">
+          <div class="loading" id="tableLoading">Loading table data...</div>
+          <div class="table-wrapper" id="dataTable" style="display: none">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Value in Mn</th>
+                </tr>
+              </thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-section">
+        <h2>🎯 Pre-Control Chart: Value Control Zones</h2>
+        <div class="chart-container">
+          <div class="loading" id="preControlLoading">Loading chart data...</div>
+          <div class="chart-wrapper">
+            <canvas id="preControlChart"></canvas>
+          </div>
+          <div class="legend">
+            <div class="legend-item">
+              <div class="legend-color green"></div>
+              Green Zone (1.0 - 9.0)
+            </div>
+            <div class="legend-item">
+              <div class="legend-color yellow"></div>
+              Yellow Zone (9.0 - 11.0)
+            </div>
+            <div class="legend-item">
+              <div class="legend-color red"></div>
+              Red Zone (11.0 - 17.0)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const SHEET_URL =
+        "https://opensheet.elk.sh/1sBR07vw-iY00AkLTbZnMwe_MYCWGm-k8KBxTDON4fA8/Sheet1";
+        
+
+      Chart.defaults.font.family = "Inter";
+      Chart.defaults.animation.duration = 800;
+
+      async function fetchData() {
+        try {
+          const res = await fetch(SHEET_URL);
+          const data = await res.json();
+
+          if (!data || data.length === 0) {
+            showError("No data available");
+            return;
+          }
+
+          const labels = data.map((row) => row.Date);
+          const values = data.map((row) => parseFloat(row.Value)).filter((v) => !isNaN(v));
+
+          if (values.length === 0) {
+            showError("No valid numeric data found");
+            return;
+          }
+
+          updateStats(values);
+          renderTable(labels, values);
+          renderCharts(labels, values);
+        } catch (error) {
+          showError(`Error loading data: ${error.message}`);
+        }
+      }
+
+      function updateStats(values) {
+        const total = values.length;
+        const avg = (values.reduce((a, b) => a + b, 0) / total).toFixed(2);
+        const max = Math.max(...values).toFixed(2);
+        const min = Math.min(...values).toFixed(2);
+
+        document.getElementById("totalEntries").textContent = total;
+        document.getElementById("avgValue").textContent = avg;
+        document.getElementById("maxValue").textContent = max;
+        document.getElementById("minValue").textContent = min;
+        document.getElementById("statsGrid").style.display = "grid";
+      }
+
+      function renderTable(labels, values) {
+        const tableBody = document.getElementById("tableBody");
+        const tableWrapper = document.getElementById("dataTable");
+        const tableLoading = document.getElementById("tableLoading");
+
+        tableBody.innerHTML = "";
+
+        labels.forEach((label, index) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `<td>${label}</td><td>${values[index]}</td>`;
+          tableBody.appendChild(row);
+        });
+
+        setTimeout(() => {
+          tableLoading.style.display = "none";
+          tableWrapper.style.display = "block";
+        }, 500);
+      }
+
+      function hideLoading(chartId) {
+        const loadingEl = document.getElementById(`${chartId}Loading`);
+        if (loadingEl) loadingEl.style.display = "none";
+      }
+
+      function showError(message) {
+        ["lineLoading", "barLoading", "histLoading", "preControlLoading", "tableLoading"].forEach(
+          (id) => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = "none";
+          }
+        );
+
+        const chartContainers = document.querySelectorAll(".chart-container");
+        chartContainers.forEach((container) => {
+          container.innerHTML = `<div class="error">${message}</div>`;
+        });
+      }
+
+      function renderCharts(labels, values) {
+        // Line Chart
+        new Chart(document.getElementById("lineChart"), {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: "Daily Values",
+                data: values,
+                borderColor: "rgba(102, 126, 234, 1)",
+                backgroundColor: "rgba(102, 126, 234, 0.15)",
+                fill: true,
+                tension: 0.4,
+                borderWidth: 2,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: "top" } },
+            scales: {
+              y: { beginAtZero: true },
+              x: { ticks: { maxTicksLimit: 10 } },
+            },
+            animation: { onComplete: () => hideLoading("line") },
+          },
+        });
+
+        // Bar Chart
+        new Chart(document.getElementById("barChart"), {
+          type: "bar",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: "Daily Values",
+                data: values,
+                backgroundColor: "rgba(78, 205, 196, 0.85)",
+                borderColor: "rgba(78, 205, 196, 1)",
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: "top" } },
+            scales: {
+              y: { beginAtZero: true },
+              x: { ticks: { maxTicksLimit: 10 } },
+            },
+            animation: { onComplete: () => hideLoading("bar") },
+          },
+        });
+
+        // Histogram
+        const binSize = 0.3;
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const bins = [];
+        const counts = [];
+
+        for (let i = min; i <= max; i += binSize) {
+          bins.push(i.toFixed(1));
+          counts.push(0);
+        }
+
+        values.forEach((val) => {
+          const index = Math.floor((val - min) / binSize);
+          if (counts[index] !== undefined) counts[index]++;
+        });
+
+        new Chart(document.getElementById("histogramChart"), {
+          type: "bar",
+          data: {
+            labels: bins,
+            datasets: [
+              {
+                label: "Frequency",
+                data: counts,
+                backgroundColor: "rgba(255, 167, 38, 0.85)",
+                borderColor: "rgba(255, 167, 38, 1)",
+                borderWidth: 1,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: "top" } },
+            scales: {
+              y: { beginAtZero: true, ticks: { stepSize: 1 } },
+              x: { ticks: { maxTicksLimit: 15 } },
+            },
+            animation: { onComplete: () => hideLoading("hist") },
+          },
+        });
+
+        // Pre-Control Chart - Modified to show all dates
+        new Chart(document.getElementById("preControlChart"), {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [
+              {
+                label: "Value in Mn",
+                data: values,
+                borderColor: "#2c3e50",
+                backgroundColor: "rgba(44, 62, 80, 0.1)",
+                borderWidth: 2,
+                pointRadius: 4,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: "top" } },
+            scales: {
+              x: {
+                ticks: {
+                  maxRotation: 45,
+                  minRotation: 45,
+                  font: { size: 10 },
+                  color: "#666",
+                  // Removed maxTicksLimit to show all dates
+                },
+              },
+              y: {
+                min: 1,
+                max: 17,
+                ticks: { stepSize: 1 },
+              },
+            },
+            animation: { onComplete: () => hideLoading("preControl") },
+          },
+          plugins: [
+            {
+              beforeDraw: function (chart) {
+                const ctx = chart.ctx;
+                const chartArea = chart.chartArea;
+                const yScale = chart.scales.y;
+
+                // Green zone: 1 - 9
+                const greenStart = yScale.getPixelForValue(9);
+                const greenEnd = yScale.getPixelForValue(1);
+                ctx.fillStyle = "rgba(144, 238, 144, 0.3)";
+                ctx.fillRect(chartArea.left, greenStart, chartArea.width, greenEnd - greenStart);
+
+                // Yellow zone: 9 - 11
+                const yellowStart = yScale.getPixelForValue(11);
+                const yellowEnd = yScale.getPixelForValue(9);
+                ctx.fillStyle = "rgba(255, 255, 0, 0.3)";
+                ctx.fillRect(chartArea.left, yellowStart, chartArea.width, yellowEnd - yellowStart);
+
+                // Red zone: 11 - 17
+                const redStart = yScale.getPixelForValue(17);
+                const redEnd = yScale.getPixelForValue(11);
+                ctx.fillStyle = "rgba(255, 182, 193, 0.3)";
+                ctx.fillRect(chartArea.left, redStart, chartArea.width, redEnd - redStart);
+              },
+            },
+          ],
+        });
+
+        setTimeout(() => {
+          hideLoading("line");
+          hideLoading("bar");
+          hideLoading("hist");
+          hideLoading("preControl");
+        }, 1000);
+      }
+
+      fetchData();
+    </script>
+  </body>
+</html>
